@@ -1,0 +1,725 @@
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+	
+// import the PhpSpreadsheet Class
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+class Backend extends CI_Controller {
+	
+	public function __construct() {
+		parent::__construct();
+		
+		$this->load->model('report/model_report');
+		//$this->load->model('report/model_report_sale_online_datatable');
+		$this->load->model('template_main/model_template_main');
+		//$this->load->library('datatables');
+		$this->load->library('table');
+		$this->load->helper('form');
+		$this->path_upload = FCPATH.'uploads/report_sale_online/';
+		
+		if($this->session->userdata('session_login') != true) {
+			redirect(site_url());
+		}
+	}
+	
+	public function report_sale_online() {
+		if($this->input->post('begin_date') != '' and $this->input->post('end_date') != '') {
+			$data['rows'] = $this->model_report->get_report_sale_online_list($this->input->post('begin_date'), $this->input->post('end_date'), $this->input->post('order_status'));
+		} else {
+			$data['rows'] = $this->model_report->get_report_sale_online_list();
+		}
+		
+		/* start header, menu */
+		$data['title'] = $this->model_template_main->get_title_menu();
+		$data['active'] = $this->model_template_main->get_active_menu();
+		$data['sub_menu_active'] = $this->model_template_main->get_active_sub_menu();
+		$data['row_user'] = $this->model_template_main->get_user_single();
+		$data['department'] = $this->model_template_main->get_department_single();
+		$data['rows_menu'] = $this->model_template_main->get_menu_list();
+		$data['rows_sub_menu'] = $this->model_template_main->get_sub_menu_list();
+		
+		$this->load->view('template_main/template_main/header', $data);
+		$this->load->view('template_main/template_main/menu_sidebar', $data);
+		/* end header, menu */
+		
+		/* start body */
+		$this->load->view('report/report_sale_online/list', $data);
+		/* end body */
+	}
+	
+	/*public function report_sale_online_server_processing() {
+        $order_index = $this->input->get('order[0][column]');
+        $param['page_size'] = $this->input->get('length');
+        $param['start'] = $this->input->get('start');
+        $param['draw'] = $this->input->get('draw');
+        $param['keyword'] = trim($this->input->get('search[value]'));
+        $param['column'] = $this->input->get("columns[{$order_index}][data]");
+        $param['dir'] = $this->input->get('order[0][dir]');
+ 
+        $results = $this->model_report_sale_online_datatable->report_sale_online_datatable($param);
+ 
+        $data['draw'] = $param['draw'];
+        $data['recordsTotal'] = $results['count'];
+        $data['recordsFiltered'] = $results['count_condition'];
+        $data['data'] = $results['data'];
+        $data['error'] = $results['error_message'];
+ 
+        $this->output->set_content_type('application/json')->set_output(json_encode($data));
+    }
+	
+	public function report_sale_online_form($id = ''){	
+		$data['id'] = $id;
+		$data['row'] = $this->model_report->get_report_sale_online_single($id);
+		
+		/* start header, menu */
+		/*$data['title'] = $this->model_template_main->get_title_menu();
+		$data['active'] = $this->model_template_main->get_active_menu();
+		$data['sub_menu_active'] = $this->model_template_main->get_active_sub_menu();
+		$data['row_user'] = $this->model_template_main->get_user_single();
+		$data['department'] = $this->model_template_main->get_department_single();
+		$data['rows_menu'] = $this->model_template_main->get_menu_list();
+		$data['rows_sub_menu'] = $this->model_template_main->get_sub_menu_list();
+		
+		$this->load->view('template_main/template_main/header', $data);
+		$this->load->view('template_main/template_main/menu_sidebar', $data);
+		/* end header, menu */
+		
+		/*$this->load->view('report/report_sale_online/form', $data);
+	}
+	
+	public function report_sale_online_save_update($id = ''){	
+		$data = array(
+			'report_sale_online_name' => $this->input->post('report_sale_online_name'),
+			'report_sale_online_select' =>  $this->input->post('report_sale_online_select'),
+			'report_sale_online_ckeditor' =>  $this->input->post('report_sale_online_ckeditor'),
+			'report_sale_online_username_update' => $this->session->userdata('session_username'),
+			'report_sale_online_datetime_update' => date('Y-m-d H:i:s'),
+			'report_sale_online_ip_update' => $_SERVER['REMOTE_ADDR']
+		);
+		
+		if(!empty($_FILES['report_sale_online_image'])) {
+			$config['upload_path']          = FCPATH.'uploads/report_sale_online/';
+			$config['allowed_types']        = 'gif|jpg|png';
+			$config['max_size']             = 2048;
+			$config['max_width']            = 2048;
+			$config['max_height']           = 2048;
+			
+			$this->load->library('upload', $config);
+			
+			$this->upload->initialize($config);
+
+			if($this->upload->do_upload('report_sale_online_image')) {
+				$data_image = $this->upload->data();
+				
+				$config_resize['image_library'] = 'gd2';
+				$config_resize['source_image'] = FCPATH.'uploads/report_sale_online/'.$data_image['file_name'];
+				$config_resize['new_image'] = FCPATH.'uploads/report_sale_online/'.$data_image['file_name'];
+				$config_resize['create_thumb'] = FALSE;
+				$config_resize['maintain_ratio'] = FALSE;
+				$config_resize['width'] = 1920;
+				$config_resize['height'] = 520;
+
+				$this->load->library('image_lib', $config_resize);
+				$this->image_lib->initialize($config_resize);
+				$this->image_lib->resize();
+				
+				$data['report_sale_online_image'] = $data_image['file_name'];
+			} else {
+				$error = array('error' => $this->upload->display_errors());
+				//pre($error);
+			}
+		}
+		
+		// update 
+		if($id != '') {	
+			$this->model_report->update_report_sale_online($data, $id);
+			
+			redirect('report/backend/report_sale_online', 'location');
+			
+		// insert
+		} else {	
+			$data['report_sale_online_username_create'] = $this->session->userdata('session_username');
+			$data['report_sale_online_datetime_create'] = date('Y-m-d H:i:s');
+			$data['report_sale_online_ip_create'] = $_SERVER['REMOTE_ADDR'];
+				
+			$this->model_report->insert_report_sale_online($data);
+			
+			redirect('report/backend/report_sale_online', 'location');
+		}
+	}
+	
+	public function report_sale_online_delete($id){
+		$this->model_report->delete_report_sale_online($id);
+
+		redirect('report/backend/report_sale_online','location');
+	}*/
+
+	/* public function export_excel_report_sale_online_form($date_begin = '', $date_end = '', $order_status = '') {
+		// $data['date_begin'] = $date_begin;
+		// $data['date_end'] = $date_end;
+		// $data['order_status'] = $order_status;
+
+		// $this->load->view('report/report_sale_online/export_excel_report_sale_online_form', $data);
+		
+		
+		header('Content-Type: text/html; charset=utf-8');
+		header("Content-type: application/vnd.ms-excel");
+		header("Content-Disposition: attachment; filename=report_sale_online_".date('YmdHis').".xls");
+		header("Pragma: no-cache");
+		header("Expires: 0");
+
+		$rows = $this->model_report->get_report_sale_online_list($date_begin, $date_end, $order_status);
+?>
+		<html>
+		<head>
+		<meta charset="utf-8">
+		</head>
+
+		<body>
+			<table>
+				<tr>
+					<th>Create Time</th>
+					<th>Order Number</th>
+					<th>Status</th>
+					<th>SKU</th>
+					<th>BarCode</th>
+					<th>Item Description</th>
+					<th>Customer No</th>
+					<th>Customer Name</th>
+					<th>Shipping Name</th>
+					<th>Shipping Address</th>
+					<th>Shipping Phone</th>
+					<th>Tax Invoice Requested</th>
+					<th>Billing Name</th>
+					<th>Billing Address</th>
+					<th>Billing Phone</th>
+					<th>Customer ID / Tax Invoice</th>
+					<th>Branch No.</th>
+					<th>Biling Shipping</th>
+					<th>Pay Method</th>
+					<th>Normal Price</th>
+					<th>Promotion Price</th>
+					<th>Qty</th>
+					<th>UOM</th>
+					<th>Discount</th>
+					<th>Vat 7%</th>
+					<th>Paid Price Total</th>
+					<th>shippingFee</th>
+					<th>Delivery Date</th>
+					<th>shippingProvider</th>
+					<th>shippingProviderType</th>
+					<th>Remark</th>
+					<th>Coupon Code</th>
+					<th>Coupon Discount</th>
+					<th>Points</th>
+					<th>Points Discount</th>
+				</tr>
+<?php
+		if(!empty($rows)) {
+			foreach($rows as $r) {
+				$coupon = $this->model_report->getCouponRecord($r->coupon_id);
+				$coupon_discount = 0;
+				if(!empty($coupon)) {
+					if($coupon->coupon_type == 'บาท') {
+						$coupon_discount = $coupon->coupon_discount;
+					} elseif($coupon->coupon_type == '%') {
+						$coupon_discount = $r->order_sub_total * $coupon->coupon_discount / 100;
+					}
+				}
+?>
+				<tr>
+					<td><?php echo $r->order_datetime_create;?></td>
+					<td><?php echo $r->order_no;?></td>
+					<td><?php echo $r->order_status;?></td>
+					<td><?php echo $r->order_detail_code;?></td>
+					<td><?php echo $r->order_detail_code;?></td>
+					<td><?php echo $r->product_description_th;?></td>
+					<td><?php echo $r->member_id;?></td>
+					<td><?php echo $r->member_name.' '.$r->member_surname;?></td>
+					<td><?php echo $r->order_name.' '.$r->order_surname;?></td>
+					<td><?php echo $r->order_address.' '.$this->model_report->get_tumbol_record($r->order_tumbol)->name_in_thai.' '.$this->model_report->get_amphur_record($r->order_amphur)->name_in_thai.' '.$this->model_report->get_province_record($r->order_province)->name_in_thai.' '.$r->order_postcode;?></td>
+					<td><?php echo $r->order_tel;?></td>
+					<td><?php if($r->order_address_for_billing != '') echo 'ต้องการ'; else echo 'ไม่ต้องการ';?></td>
+					<td><?php echo $r->order_billing_name.' '.$r->order_billing_surname;?></td>
+					<td><?php echo $r->order_billing_address.' '.$this->model_report->get_tumbol_record($r->order_billing_tumbol)->name_in_thai.' '.$this->model_report->get_amphur_record($r->order_billing_amphur)->name_in_thai.' '.$this->model_report->get_province_record($r->order_billing_province)->name_in_thai.' '.$r->order_billing_postcode;?></td>
+					<td><?php echo $r->order_billing_tel;?></td>
+					<td><?php echo $r->order_billing_card_id;?></td>
+					<td>&nbsp;</td>
+					<td><?php echo $r->order_address_for_billing;?></td>
+					<td><?php echo $r->order_payment_method;?></td>
+					<td><?php echo $r->product_price_before_discount;?></td>
+					<td><?php echo $r->order_discount;?></td>
+					<td><?php echo $r->order_detail_qty;?></td>
+					<td>PCS</td>
+					<td><?php echo $r->order_discount;?></td>
+					<td><?php echo $r->order_detail_price * 7 / 100;?></td>
+					<td><?php echo $r->order_detail_price * $r->order_detail_qty;?></td>
+					<td><?php echo $r->order_shipping;?></td>
+					<td>&nbsp;</td>
+					<td><?php if($r->order_shipping_method == 'Express') echo 'Standard Delivery'; else echo $r->order_shipping_method;?></td>
+					<td>Standard</td>
+					<td><?php echo $r->order_note;?></td>
+					<td><?php echo @$coupon->coupon_code;?></td>
+					<td><?php if(!empty($coupon_discount)) echo $coupon_discount;?></td>
+					<td><?php echo $r->order_point;?></td>
+					<td><?php echo $r->order_use_point;?></td>
+				</tr>
+<?php
+			}
+		}
+?>
+			</table>
+		</body>
+		</html>
+<?php
+	}*/
+
+	public function export_excel_report_sale_online_form($date_begin = '', $date_end = '', $order_status = '') {
+		require FCPATH.'vendor/autoload.php';
+	
+		$spreadsheet = new Spreadsheet(); // instantiate Spreadsheet
+
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // manually set table data value
+        $sheet->setCellValue('A1', 'Create Time'); 
+        $sheet->setCellValue('B1', 'Order Number');
+        $sheet->setCellValue('C1', 'Status');
+		$sheet->setCellValue('D1', 'SKU');
+		$sheet->setCellValue('E1', 'BarCode');
+		$sheet->setCellValue('F1', 'Item Description');
+		$sheet->setCellValue('G1', 'Customer No');
+		$sheet->setCellValue('H1', 'Customer Name');
+		$sheet->setCellValue('I1', 'Shipping Name');
+		$sheet->setCellValue('J1', 'Shipping Address');
+		$sheet->setCellValue('K1', 'Shipping Phone');
+		$sheet->setCellValue('L1', 'Tax Invoice Requested');
+		$sheet->setCellValue('M1', 'Billing Name');
+		$sheet->setCellValue('N1', 'Billing Address');
+		$sheet->setCellValue('O1', 'Billing Phone');
+		$sheet->setCellValue('P1', 'Customer ID / Tax Invoice');
+		$sheet->setCellValue('Q1', 'Branch No');
+		$sheet->setCellValue('R1', 'Billing Shipping');
+		$sheet->setCellValue('S1', 'Pay Method');
+		$sheet->setCellValue('T1', 'Normal Price');
+		$sheet->setCellValue('U1', 'Promotion Price');
+		$sheet->setCellValue('V1', 'Qty');
+		$sheet->setCellValue('W1', 'UOM');
+		$sheet->setCellValue('X1', 'Discount');
+		$sheet->setCellValue('Y1', 'Vat 7%');
+		$sheet->setCellValue('Z1', 'Paid Price Total');
+		$sheet->setCellValue('AA1', 'shippingFee');
+		$sheet->setCellValue('AB1', 'Delivery Date');
+		$sheet->setCellValue('AC1', 'shippingProvider');
+		$sheet->setCellValue('AD1', 'shippingProviderType');
+		$sheet->setCellValue('AE1', 'Remark');
+		$sheet->setCellValue('AF1', 'Coupon Code');
+		$sheet->setCellValue('AG1', 'Coupon Discount');
+		$sheet->setCellValue('AH1', 'Points');
+		$sheet->setCellValue('AI1', 'Points Discount');
+
+		$rows = $this->model_report->get_report_sale_online_list($date_begin, $date_end, $order_status);
+
+		//pre($rows);
+
+		if(!empty($rows)) {
+			$i = 1;
+			foreach($rows as $r) {
+				$coupon = $this->model_report->getCouponRecord($r->coupon_id);
+				$coupon_discount = 0;
+				if(!empty($coupon)) {
+					if($coupon->coupon_type == 'บาท') {
+						$coupon_discount = $coupon->coupon_discount;
+					} elseif($coupon->coupon_type == '%') {
+						$coupon_discount = $r->order_sub_total * $coupon->coupon_discount / 100;
+					}
+				}
+
+				$i++;
+
+				$sheet->setCellValue('A'.$i, $r->order_datetime_create);
+				$sheet->setCellValue('B'.$i, $r->order_no." ");
+				$sheet->setCellValue('C'.$i, $r->order_status);
+				$sheet->setCellValue('D'.$i, $r->order_detail_code." ");
+				$sheet->setCellValue('E'.$i, $r->order_detail_code." ");
+				$sheet->setCellValue('F'.$i, $r->product_description_th);
+				$sheet->setCellValue('G'.$i, $r->member_id);
+				$sheet->setCellValue('H'.$i, $r->member_name.' '.$r->member_surname);
+				$sheet->setCellValue('I'.$i, $r->order_name.' '.$r->order_surname);
+				$sheet->setCellValue('J'.$i, $r->order_address.' '.$this->model_report->get_tumbol_record($r->order_tumbol)->name_in_thai.' '.$this->model_report->get_amphur_record($r->order_amphur)->name_in_thai.' '.$this->model_report->get_province_record($r->order_province)->name_in_thai.' '.$r->order_postcode);
+				$sheet->setCellValue('K'.$i, $r->order_tel);
+				if($r->order_address_for_billing != '') {
+					$sheet->setCellValue('L'.$i, 'ต้องการ');
+				} else {
+				 	$sheet->setCellValue('L'.$i, 'ไม่ต้องการ');
+				} 
+				$sheet->setCellValue('M'.$i, $r->order_billing_name.' '.$r->order_billing_surname);
+				$sheet->setCellValue('N'.$i, $r->order_billing_address.' '.@$this->model_report->get_tumbol_record($r->order_billing_tumbol)->name_in_thai.' '.@$this->model_report->get_amphur_record($r->order_billing_amphur)->name_in_thai.' '.@$this->model_report->get_province_record($r->order_billing_province)->name_in_thai.' '.$r->order_billing_postcode);
+				$sheet->setCellValue('O'.$i, $r->order_billing_tel);
+				$sheet->setCellValue('P'.$i, $r->order_billing_card_id." ");
+				$sheet->setCellValue('Q'.$i, '');
+				$sheet->setCellValue('R'.$i, $r->order_address_for_billing);
+				$sheet->setCellValue('S'.$i, $r->order_payment_method);
+				$sheet->setCellValue('T'.$i, $r->product_price_before_discount);
+				$sheet->setCellValue('U'.$i, $r->product_price);
+				$sheet->setCellValue('V'.$i, $r->order_detail_qty);
+				$sheet->setCellValue('W'.$i, 'PCS');
+				$sheet->setCellValue('X'.$i, $r->order_discount);
+				$sheet->setCellValue('Y'.$i, $r->order_detail_price * 7 / 100);
+				$sheet->setCellValue('Z'.$i, $r->order_detail_price * $r->order_detail_qty);
+				$sheet->setCellValue('AA'.$i, $r->order_shipping);
+				$sheet->setCellValue('AB'.$i, '');
+				$sheet->setCellValue('AC'.$i, 'Standard');
+				if($r->order_shipping_method == 'Express') {
+					$sheet->setCellValue('AD'.$i, 'Standard Delivery');
+				} else {
+					$sheet->setCellValue('AD'.$i, $r->order_shipping_method);
+				}
+				$sheet->setCellValue('AE'.$i, $r->order_note);
+				
+				$sheet->setCellValue('AF'.$i, @$coupon->coupon_code);
+
+				if(!empty($coupon_discount)) {
+					$sheet->setCellValue('AG'.$i, $coupon_discount);
+				} else {
+					$sheet->setCellValue('AG'.$i, '');
+				}
+
+				$sheet->setCellValue('AH'.$i, $r->order_point);
+
+				$sheet->setCellValue('AI'.$i, $r->order_use_point);
+			}
+		}
+        
+        $writer = new Xlsx($spreadsheet); // instantiate Xlsx
+ 
+        $filename = 'report_sale_online_'.date('YmdHis'); // set filename for excel file to be exported
+ 
+        header('Content-Type: application/vnd.ms-excel'); // generate excel file
+        header('Content-Disposition: attachment;filename="'. $filename .'.xlsx"'); 
+        header('Cache-Control: max-age=0');
+        
+        $writer->save('php://output');	// download file
+	}
+	
+	public function report_remain_stock() {
+		$data['rows'] = $this->model_report->getReportStockRemain();
+		
+		/* start header, menu */
+		$data['title'] = $this->model_template_main->get_title_menu();
+		$data['active'] = $this->model_template_main->get_active_menu();
+		$data['sub_menu_active'] = $this->model_template_main->get_active_sub_menu();
+		$data['row_user'] = $this->model_template_main->get_user_single();
+		$data['department'] = $this->model_template_main->get_department_single();
+		$data['rows_menu'] = $this->model_template_main->get_menu_list();
+		$data['rows_sub_menu'] = $this->model_template_main->get_sub_menu_list();
+		
+		$this->load->view('template_main/template_main/header', $data);
+		$this->load->view('template_main/template_main/menu_sidebar', $data);
+		/* end header, menu */
+		
+		/* start body */
+		$this->load->view('report/report_remain_stock/list', $data);
+		/* end body */
+	}
+
+	public function export_excel_report_remain_stock() {
+		header('Content-Type: text/html; charset=utf-8');
+		header("Content-type: application/vnd.ms-excel");
+		header("Content-Disposition: attachment; filename=report_remain_stock_".date('YmdHis').".xls");
+		header("Pragma: no-cache");
+		header("Expires: 0");
+
+		$rows = $this->model_report->getReportStockRemain();
+?>
+		<html>
+		<head>
+		<meta charset="utf-8">
+		</head>
+
+		<body>
+			<table>
+				<tr>
+					<th class="select-filter">Category</th>
+					<th>Sub Category</th>
+					<th>Item Code รหัสสินค้า</th>
+					<th>Descriptions ข้อมูลสินค้า</th>
+					<th>Price ราคาปกติ</th>
+					<th>Pro Price ราคาโปรโมชั้น</th>
+					<th>Quantity จำนวน</th>
+					<th>UOM หน่วยนับ</th>
+				</tr>
+<?php
+		$i = 1;
+		if(!empty($rows)) {
+			foreach($rows as $r) {
+?>
+				<tr>
+					<td class="select-filter"><?php echo $r->category1_name_th.' / '.$r->category1_name_en;?></td>
+					<td><?php echo $r->category2_name_th.' / '.$r->category2_name_en;?></td>
+					<td><?php echo $r->product_code;?></td>
+					<td><?php echo $r->product_name_th.' / '.$r->product_name_en;?></td>
+					<td><?php echo $r->product_price;?></td>
+					<td><?php echo $r->product_price_before_discount;?></td>
+					<td><?php echo $r->product_stock;?></td>
+					<td>&nbsp;</td>
+				</tr>
+<?php
+				$i++;
+			}
+		}
+?>
+			</table>
+		</body>
+		</html>
+<?php
+	}
+
+	public function report_shipment() {
+		if($this->input->post('begin_date') != '' and $this->input->post('end_date') != '') {
+			$data['rows'] = $this->model_report->get_report_shipment_list($this->input->post('begin_date'), $this->input->post('end_date'));
+		} else {
+			$data['rows'] = $this->model_report->get_report_shipment_list();
+		}
+		
+		/* start header, menu */
+		$data['title'] = $this->model_template_main->get_title_menu();
+		$data['active'] = $this->model_template_main->get_active_menu();
+		$data['sub_menu_active'] = $this->model_template_main->get_active_sub_menu();
+		$data['row_user'] = $this->model_template_main->get_user_single();
+		$data['department'] = $this->model_template_main->get_department_single();
+		$data['rows_menu'] = $this->model_template_main->get_menu_list();
+		$data['rows_sub_menu'] = $this->model_template_main->get_sub_menu_list();
+		
+		$this->load->view('template_main/template_main/header', $data);
+		$this->load->view('template_main/template_main/menu_sidebar', $data);
+		/* end header, menu */
+		
+		/* start body */
+		$this->load->view('report/report_shipment/list', $data);
+		/* end body */
+	}
+
+	public function export_excel_report_shipment_form($date_begin = '', $date_end = '') {
+		header('Content-Type: text/html; charset=utf-8');
+		header("Content-type: application/vnd.ms-excel");
+		header("Content-Disposition: attachment; filename=report_shipment_".date('YmdHis').".xls");
+		header("Pragma: no-cache");
+		header("Expires: 0");
+
+		$rows = $this->model_report->get_report_shipment_list($date_begin, $date_end);
+?>
+		<html>
+		<head>
+		<meta charset="utf-8">
+		</head>
+
+		<body>
+			<table>
+			<tr>
+				<th class="select-filter">No</th>
+				<th>รหัสพัสดุจากทางบริษํทที่ฝากส่ง</th>
+				<th>Invoice No</th>
+				<th>Barcode No</th>
+				<th>Product In Box</th>
+				<th>Receiver</th>
+				<th>Receiver Address</th>
+				<th>Receiver Tumbol</th>
+				<th>Receiver Amphur</th>
+				<th>Receiver Province</th>
+				<th>Receiver ZipCode</th>
+				<th>Receiver Tel</th>
+				<th>Weight</th>
+				<th>Price (ราคาสินค้าที่ผู้รับต้องจ่ายให้ พนง. ปณ.)</th>
+			</tr>
+<?php
+		$code = '';
+		$weight = 0;
+		
+		$i = 1;
+		if(!empty($rows)) {
+			foreach($rows as $r) {
+				$detail = $this->model_report->get_report_order_detail($r->order_id);
+				if(!empty($detail)) {
+					$code = '';
+					$weight = 0;
+		
+					foreach($detail as $d) {
+						if($d->order_detail_code != '') {
+							$code .= $d->order_detail_code.', ';
+						}
+						
+						$weight += $d->weight;
+					}
+		
+					if($code != '') {
+						$code = substr($code, 0, -2);
+					}
+				}
+?>
+				<tr>
+					<td class="select-filter"><?php echo $i;?></td>
+					<td><?php echo $r->order_tracking_no;?></td>
+					<td><?php echo $r->order_no;?></td>
+					<td>&nbsp;</td>
+					<td><?php echo $code;?></td>
+					<td><?php echo $r->order_name.' '.$r->order_surname;?></td>
+					<td><?php echo $r->order_address;?></td>
+					<td><?php echo $this->model_report->get_tumbol_record($r->order_tumbol)->name_in_thai;?></td>
+					<td><?php echo $this->model_report->get_amphur_record($r->order_amphur)->name_in_thai;?></td>
+					<td><?php echo $this->model_report->get_province_record($r->order_province)->name_in_thai;?></td>
+					<td><?php echo $r->order_postcode;?></td>
+					<td><?php echo $r->order_tel;?></td>
+					<td><?php echo $weight;?></td>
+					<td>&nbsp;</td>											
+				</tr>
+<?php
+				$i++;
+			}
+		}
+?>
+			</table>
+		</body>
+		</html>
+<?php
+	}
+
+	public function report_type_payment() {
+		if($this->input->post('begin_date') != '' and $this->input->post('end_date') != '') {
+			$data['rows'] = $this->model_report->get_report_type_payment_list($this->input->post('begin_date'), $this->input->post('end_date'), $this->input->post('order_status'));
+		} else {
+			$data['rows'] = $this->model_report->get_report_type_payment_list();
+		}
+		
+		/* start header, menu */
+		$data['title'] = $this->model_template_main->get_title_menu();
+		$data['active'] = $this->model_template_main->get_active_menu();
+		$data['sub_menu_active'] = $this->model_template_main->get_active_sub_menu();
+		$data['row_user'] = $this->model_template_main->get_user_single();
+		$data['department'] = $this->model_template_main->get_department_single();
+		$data['rows_menu'] = $this->model_template_main->get_menu_list();
+		$data['rows_sub_menu'] = $this->model_template_main->get_sub_menu_list();
+		
+		$this->load->view('template_main/template_main/header', $data);
+		$this->load->view('template_main/template_main/menu_sidebar', $data);
+		/* end header, menu */
+		
+		/* start body */
+		$this->load->view('report/report_type_payment/list', $data);
+		/* end body */
+	}
+
+	public function export_excel_report_type_payment_form($date_begin = '', $date_end = '', $order_status = '') {
+		header('Content-Type: text/html; charset=utf-8');
+		header("Content-type: application/vnd.ms-excel");
+		header("Content-Disposition: attachment; filename=report_type_payment_".date('YmdHis').".xls");
+		header("Pragma: no-cache");
+		header("Expires: 0");
+
+		$rows = $this->model_report->get_report_type_payment_list($date_begin, $date_end, $order_status);
+?>
+		<html>
+		<head>
+		<meta charset="utf-8">
+		</head>
+
+		<body>
+			<table>
+			<tr>
+				<th class="select-filter">Order No</th>
+				<th>Order Date</th>
+				<th>Customer No</th>
+				<th>Customer Name</th>
+				<th>Order Status</th>
+				<th>Payment Type</th>
+				<th>Payment Date</th>
+				<th>Net Amount</th>
+				<th>Refernce Number</th>
+				<th>Line Number</th>
+				<th>Payment Sub Type</th>
+				<th>Amount</th>
+			</tr>
+<?php
+		if(!empty($rows)) {
+			foreach($rows as $r) {
+				if($r->order_status == 'Ordering') {
+					$order_status = 'รอชำระเงิน';
+				} elseif($r->order_status == 'Processing') {
+					$order_status = 'ชำระเงินแล้ว';
+				} elseif($r->order_status == 'Delivery') {
+					$order_status = 'กำลังเตรียมจัดส่ง';
+				} elseif($r->order_status == 'Shipped') {
+					$order_status = 'ขนส่งแล้ว';
+				} elseif($r->order_status == 'Complete') {
+					$order_status = 'เสร็จสมบูรณ์';
+				} elseif($r->order_status == 'Cancel') {
+					$order_status = 'ยกเลิก';
+				}
+?>
+												<tr>
+													<td class="select-filter"><?php echo $r->order_no;?></td>
+													<td><?php echo date2dateNormal($r->order_datetime_create);?></td>
+													<td><?php echo $r->member_id;?></td>
+													<td><?php echo $r->order_name.' '.$r->order_surname;?></td>
+													<td><?php echo $order_status;?></td>
+													<td><?php echo $r->order_payment_method;?></td>
+													<td><?php echo $r->order_datetime_create;?></td>
+													<td><?php echo number_format($r->order_total, 2, '.', ',');?></td>
+													<td></td>
+													<td>1</td>
+													<td>ยอดรวม</td>
+													<td><?php echo number_format($r->order_sub_total, 2, '.', ',');?></td>
+												</tr>
+												<tr>
+													<td class="select-filter"><?php echo $r->order_no;?></td>
+													<td><?php echo date2dateNormal($r->order_datetime_create);?></td>
+													<td><?php echo $r->member_id;?></td>
+													<td><?php echo $r->order_name.' '.$r->order_surname;?></td>
+													<td><?php echo $order_status;?></td>
+													<td><?php echo $r->order_payment_method;?></td>
+													<td><?php echo $r->order_datetime_create;?></td>
+													<td><?php echo number_format($r->order_total, 2, '.', ',');?></td>
+													<td></td>
+													<td>2</td>
+													<td>ส่วนลด</td>
+													<td><?php echo number_format($r->order_discount, 2, '.', ',');?></td>
+												</tr>
+												<tr>
+													<td class="select-filter"><?php echo $r->order_no;?></td>
+													<td><?php echo date2dateNormal($r->order_datetime_create);?></td>
+													<td><?php echo $r->member_id;?></td>
+													<td><?php echo $r->order_name.' '.$r->order_surname;?></td>
+													<td><?php echo $order_status;?></td>
+													<td><?php echo $r->order_payment_method;?></td>
+													<td><?php echo $r->order_datetime_create;?></td>
+													<td><?php echo number_format($r->order_total, 2, '.', ',');?></td>
+													<td></td>
+													<td>3</td>
+													<td>ค่าขนส่ง</td>
+													<td><?php echo number_format($r->order_shipping, 2, '.', ',');?></td>
+												</tr>
+												<tr>
+													<td class="select-filter"><?php echo $r->order_no;?></td>
+													<td><?php echo date2dateNormal($r->order_datetime_create);?></td>
+													<td><?php echo $r->member_id;?></td>
+													<td><?php echo $r->order_name.' '.$r->order_surname;?></td>
+													<td><?php echo $order_status;?></td>
+													<td><?php echo $r->order_payment_method;?></td>
+													<td><?php echo $r->order_datetime_create;?></td>
+													<td><?php echo number_format($r->order_total, 2, '.', ',');?></td>
+													<td></td>
+													<td>4</td>
+													<td>ราคาสุทธิ</td>
+													<td><?php echo number_format($r->order_total, 2, '.', ',');?></td>
+												</tr>
+<?php
+			}
+		}
+?>
+			</table>
+		</body>
+		</html>
+<?php
+	}
+}
+?>

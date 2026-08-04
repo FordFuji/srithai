@@ -1,0 +1,13 @@
+src="
+src="<?php echo base_url('asset/frontend/
+
+href="
+href="<?php echo site_url('
+
+href="
+href="<?php echo base_url('asset/frontend/
+
+.php
+');?>
+
+');?>

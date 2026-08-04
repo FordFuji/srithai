@@ -1,0 +1,9 @@
+RewriteEngine On
+ErrorDocument 404 /index.php
+ErrorDocument 410 /index.php
+ErrorDocument 500 /index.php
+
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} ^srithaionline\.com
+RewriteRule ^(.*)$ https://srithaionline.com/$1 [R=301,L]
+RewriteRule ^index.php$ https://srithaionline.com/$1 [R=301,L]

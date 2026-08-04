@@ -1,0 +1,39 @@
+ci_banner -> banner_id, banner_image, banner_datetime_create, banner_ip_create, banner_datetime_update, banner_ip_update
+
+ci_category1 -> category1_id, category1_name_th, category1_name_en, category1_datetime_create, category1_ip_create, category1_datetime_update, category1_ip_update
+
+ci_category2 -> category2_id, category1_id, category2_name_th, category2_name_en, category2_datetime_create, category2_ip_create, category2_datetime_update, category2_ip_update
+
+ci_product -> product_id, category2_id, product_image, product_name_th, product_name_en, product_description_th, product_description_en, product_price_before_discount, product_price, product_descriptions_th, product_descriptions_en, product_specifications_th, product_specifications_en, product_details_th, product_details_en, product_home, product_datetime_create, product_ip_create, product_datetime_update, product_ip_update
+
+ci_color -> color_id, color_name_th, color_name_en, color_datetime_create, color_ip_create, color_datetime_update, color_ip_update
+
+ci_size -> size_id, size_name_th, size_name_en, size_datetime_create, size_ip_create, size_datetime_update, size_ip_update
+
+ci_map_product -> map_product_id, product_id, color_id, size_id, map_product_datetime_create, map_product_ip_create, map_product_datetime_update, map_product_ip_update
+
+-> ถามแบมแบม ไม่มีหน้าเกี่ยวกับเรา, ข่าวสารและโปรโมชันรึเปล่า
+
+ci_contact_us -> contact_us_id, contact_us_center_th, contact_us_center_en, contact_us_address_th, contact_us_address_en, contact_us_tel_th, contact_us_tel_en, contact_us_fax_th, contact_us_fax_en, contact_us_email, contact_us_google_map_embed, contact_us_datetime_update, contact_us_ip_update
+
+ci_contact_us_form -> contact_us_form_name, contact_us_form_tel, contact_us_form_email, contact_us_form_subject, contact_us_form_message, contact_us_form_datetime_create, contact_us_form_ip_create
+
+-> เหลือ Member, Order
+หน้าเกี่ยวกับเรา ไม่มีค่ะ ตัดออก
+ข่าวสารและโปรโมชั่น เปลี่ยนเป็น บทความอยู่ในหน้า Home ค่ะ -> Articles
+
+ci_article -> article_id, article_image, article_date, article_name_th, article_name_en, article_description_th, article_description_en, article_detail_th, article_detail_en, article_datetime_create, article_ip_create, article_datetime_update, article_ip_update
+
+ci_member -> member_id, member_name, member_surname, member_tel, member_email, member_username(-> ตอนลงทะเบียนให้เหมือนกับ member_email), member_password, member_datetime_create, member_datetime_update
+
+ci_member_shipping -> member_shipping_id, member_id, member_shipping_status, member_shipping_name, member_shipping_surname, member_shipping_tel, member_shipping_address, member_shipping_province, member_shipping_amphur, member_shipping_tumbol, member_shipping_postcode, member_shipping_datetime_create, member_shipping_datetime_update
+
+ci_order => order_id, order_no, order_sub_total, order_shipping, order_discount, order_total, order_name, order_surname, order_tel, order_email, order_address, order_province, order_amphur, order_tumbol, order_postcode, order_note, order_shipping_method, order_payment_method, order_status, order_datetime_create, order_datetime_update
+
+ci_order_detail => order_detail_id, order_id, product_id, order_detail_qty, order_detail_price, order_detail_name, order_detail_image, order_detail_price_before_discount, order_detail_color, order_detail_size, order_detail_datetime_create, order_detail_datetime_update
+
+
+
+
+
+
