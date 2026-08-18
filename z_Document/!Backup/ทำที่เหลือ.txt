@@ -1,2 +1,0 @@
-19. ซื้อ และ แถม 
-ci_buy_and_giveaway -> buy_and_giveaway_id, buy_product_id, giveaway_product_id, buy_and_giveaway_datetime_create, buy_and_giveaway_datetime_update
